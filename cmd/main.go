@@ -15,15 +15,23 @@ func main() {
 
 	r := gin.Default()
 
-	catRepo := &repository.CategoryRepository{DB: db}
-	catService := &service.CategoryService{Repo: catRepo}
-	catHandler := &handler.CategoryHandler{Service: catService}
-	catHandler.Register(r)
+	// Health check endpoint
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+			"message": "Service is healthy",
+		})
+	})
 
 	prodRepo := &repository.ProductRepository{DB: db}
 	prodService := &service.ProductService{Repo: prodRepo}
 	prodHandler := &handler.ProductHandler{Service: prodService}
 	prodHandler.Register(r)
+
+	catRepo := &repository.CategoryRepository{DB: db}
+	catService := &service.CategoryService{Repo: catRepo, ProductRepo: prodRepo}
+	catHandler := &handler.CategoryHandler{Service: catService}
+	catHandler.Register(r)
 
 	r.Run(":8080")
 }

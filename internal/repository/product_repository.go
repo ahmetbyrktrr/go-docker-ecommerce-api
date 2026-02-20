@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"ecommerce/internal/model"
+	"github.com/lib/pq"
 )
 
 type ProductRepository struct {
@@ -44,5 +45,39 @@ func (r *ProductRepository) Update(id int64, p model.Product) error {
 
 func (r *ProductRepository) Delete(id int64) error {
 	_, err := r.DB.Exec("DELETE FROM products WHERE id=$1", id)
+	return err
+}
+
+func (r *ProductRepository) GetByCategoryID(categoryID int64) ([]model.Product, error) {
+	rows, err := r.DB.Query(`
+	SELECT id, name, price, stock, size, color, category_id FROM products
+	WHERE category_id=$1`, categoryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []model.Product
+	for rows.Next() {
+		var p model.Product
+		rows.Scan(&p.ID, &p.Name, &p.Price, &p.Stock, &p.Size, &p.Color, &p.CategoryID)
+		list = append(list, p)
+	}
+	return list, nil
+}
+
+func (r *ProductRepository) DeleteByCategoryID(categoryID int64) error {
+	_, err := r.DB.Exec("DELETE FROM products WHERE category_id=$1", categoryID)
+	return err
+}
+
+func (r *ProductRepository) DeleteByCategoryIDAndNotInList(categoryID int64, productIDs []int64) error {
+	if len(productIDs) == 0 {
+		_, err := r.DB.Exec("DELETE FROM products WHERE category_id=$1", categoryID)
+		return err
+	}
+	
+	query := "DELETE FROM products WHERE category_id=$1 AND id != ALL($2)"
+	_, err := r.DB.Exec(query, categoryID, pq.Array(productIDs))
 	return err
 }

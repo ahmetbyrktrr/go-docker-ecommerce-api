@@ -14,6 +14,12 @@ type CategoryHandler struct {
 }
 
 func (h *CategoryHandler) Register(r *gin.Engine) {
+	r.GET("/categories/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+			"message": "Category service is healthy",
+		})
+	})
 	r.POST("/categories", h.Create)
 	r.GET("/categories", h.GetAll)
 	r.PUT("/categories/:id", h.Update)
@@ -36,7 +42,11 @@ func (h *CategoryHandler) Update(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	var cat model.Category
 	c.BindJSON(&cat)
-	h.Service.Update(id, cat.Name)
+	err := h.Service.Update(id, cat.Name, cat.Products)
+	if err != nil {
+		response.JSON(c, http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	response.JSON(c, http.StatusOK, "updated")
 }
 

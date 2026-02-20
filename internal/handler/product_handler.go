@@ -14,6 +14,12 @@ type ProductHandler struct {
 }
 
 func (h *ProductHandler) Register(r *gin.Engine) {
+	r.GET("/products/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+			"message": "Product service is healthy",
+		})
+	})
 	r.POST("/products", h.Create)
 	r.GET("/products", h.GetAll)
 	r.PUT("/products/:id", h.Update)
